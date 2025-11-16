@@ -10,5 +10,6 @@ The `verilog/` directory contains synthesizable Verilog-2001 modules that implem
 | `relu_activation.v` | Signed ReLU activation with valid/ready style timing and accompanying testbench. |
 | `weight_bias_regfile.v` | Configurable weight and bias register file with independent write controls plus a smoke-test bench. |
 | `stream_register.v` | One-stage ready/valid stream register that can wrap existing datapaths and an illustrative testbench. |
+| `neural_network_top.v` | Example top-level pipeline that chains MAC and ReLU layers, backed by the register file for weights/biases, with a streaming interface and demo testbench. |
 
 Each file includes an example testbench that can be simulated with your preferred Verilog simulator (e.g., `iverilog` or `xsim`).
