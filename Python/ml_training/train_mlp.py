@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from sklearn.neural_network import MLPClassifier
 
 
-def load_datasets(base_path: str = "data/training_vectors"):
+def load_datasets(base_path: str = "../../data/training_vectors"):
     """Load training, validation, and test datasets from .npy files."""
     x_train = np.load(f"{base_path}/X_train.npy")
     y_train = np.load(f"{base_path}/y_train.npy")
