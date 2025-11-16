@@ -1,11 +1,16 @@
 """Train a simple MLP classifier for radar range-profile classification."""
+import os
 import numpy as np
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.neural_network import MLPClassifier
 
 
-def load_datasets(base_path: str = "../../data/training_vectors"):
+def load_datasets(base_path: str = None):
     """Load training, validation, and test datasets from .npy files."""
+    if base_path is None:
+        # Construct path relative to this script's directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        base_path = os.path.join(script_dir, "../../data/training_vectors")
     x_train = np.load(f"{base_path}/X_train.npy")
     y_train = np.load(f"{base_path}/y_train.npy")
     x_val = np.load(f"{base_path}/X_val.npy")
