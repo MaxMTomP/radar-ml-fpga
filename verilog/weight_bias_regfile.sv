@@ -7,35 +7,35 @@ module weight_bias_regfile #(
     parameter integer WEIGHT_ADDR_WIDTH  = 6,
     parameter integer BIAS_ADDR_WIDTH    = 4
 ) (
-    input  wire                          clk,
-    input  wire                          rst,
-    input  wire                          ce,
-    input  wire                          weight_we,
-    input  wire [WEIGHT_ADDR_WIDTH-1:0]  weight_write_addr,
-    input  wire [DATA_WIDTH-1:0]         weight_write_data,
-    input  wire                          bias_we,
-    input  wire [BIAS_ADDR_WIDTH-1:0]    bias_write_addr,
-    input  wire [DATA_WIDTH-1:0]         bias_write_data,
-    input  wire [WEIGHT_ADDR_WIDTH-1:0]  weight_read_addr,
-    input  wire [BIAS_ADDR_WIDTH-1:0]    bias_read_addr,
-    output reg  [DATA_WIDTH-1:0]         weight_read_data,
-    output reg  [DATA_WIDTH-1:0]         bias_read_data
+    input  logic                          clk,
+    input  logic                          rst,
+    input  logic                          ce,
+    input  logic                          weight_we,
+    input  logic [WEIGHT_ADDR_WIDTH-1:0]  weight_write_addr,
+    input  logic signed [DATA_WIDTH-1:0]  weight_write_data,
+    input  logic                          bias_we,
+    input  logic [BIAS_ADDR_WIDTH-1:0]    bias_write_addr,
+    input  logic signed [DATA_WIDTH-1:0]  bias_write_data,
+    input  logic [WEIGHT_ADDR_WIDTH-1:0]  weight_read_addr,
+    input  logic [BIAS_ADDR_WIDTH-1:0]    bias_read_addr,
+    output logic signed [DATA_WIDTH-1:0]  weight_read_data,
+    output logic signed [DATA_WIDTH-1:0]  bias_read_data
 );
-    reg [DATA_WIDTH-1:0] weight_mem [0:WEIGHT_COUNT-1];
-    reg [DATA_WIDTH-1:0] bias_mem   [0:BIAS_COUNT-1];
+    logic signed [DATA_WIDTH-1:0] weight_mem [0:WEIGHT_COUNT-1];
+    logic signed [DATA_WIDTH-1:0] bias_mem   [0:BIAS_COUNT-1];
 
     integer i;
 
-    always @(posedge clk) begin
+    always_ff @(posedge clk) begin
         if (rst) begin
             for (i = 0; i < WEIGHT_COUNT; i = i + 1) begin
-                weight_mem[i] <= {DATA_WIDTH{1'b0}};
+                weight_mem[i] <= '0;
             end
             for (i = 0; i < BIAS_COUNT; i = i + 1) begin
-                bias_mem[i] <= {DATA_WIDTH{1'b0}};
+                bias_mem[i] <= '0;
             end
-            weight_read_data <= {DATA_WIDTH{1'b0}};
-            bias_read_data   <= {DATA_WIDTH{1'b0}};
+            weight_read_data <= '0;
+            bias_read_data   <= '0;
         end else if (ce) begin
             if (weight_we) begin
                 weight_mem[weight_write_addr] <= weight_write_data;
@@ -56,20 +56,20 @@ module tb_weight_bias_regfile;
     localparam integer WEIGHT_ADDR_WIDTH = 2;
     localparam integer BIAS_ADDR_WIDTH   = 1;
 
-    reg clk = 1'b0;
-    reg rst = 1'b1;
-    reg ce  = 1'b1;
+    logic clk = 1'b0;
+    logic rst = 1'b1;
+    logic ce  = 1'b1;
 
-    reg  weight_we = 1'b0;
-    reg  bias_we   = 1'b0;
-    reg  [WEIGHT_ADDR_WIDTH-1:0] weight_write_addr = 0;
-    reg  [BIAS_ADDR_WIDTH-1:0]   bias_write_addr   = 0;
-    reg  [DATA_WIDTH-1:0]        weight_write_data = 0;
-    reg  [DATA_WIDTH-1:0]        bias_write_data   = 0;
-    reg  [WEIGHT_ADDR_WIDTH-1:0] weight_read_addr  = 0;
-    reg  [BIAS_ADDR_WIDTH-1:0]   bias_read_addr    = 0;
-    wire [DATA_WIDTH-1:0]        weight_read_data;
-    wire [DATA_WIDTH-1:0]        bias_read_data;
+    logic                         weight_we = 1'b0;
+    logic                         bias_we   = 1'b0;
+    logic [WEIGHT_ADDR_WIDTH-1:0] weight_write_addr = '0;
+    logic [BIAS_ADDR_WIDTH-1:0]   bias_write_addr   = '0;
+    logic signed [DATA_WIDTH-1:0] weight_write_data = '0;
+    logic signed [DATA_WIDTH-1:0] bias_write_data   = '0;
+    logic [WEIGHT_ADDR_WIDTH-1:0] weight_read_addr  = '0;
+    logic [BIAS_ADDR_WIDTH-1:0]   bias_read_addr    = '0;
+    logic signed [DATA_WIDTH-1:0] weight_read_data;
+    logic signed [DATA_WIDTH-1:0] bias_read_data;
 
     weight_bias_regfile #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -127,7 +127,7 @@ module tb_weight_bias_regfile;
         $finish;
     end
 
-    always @(posedge clk) begin
+    always_ff @(posedge clk) begin
         if (!rst) begin
             $display("[%0t] weight_rd=%0h bias_rd=%0h", $time, weight_read_data, bias_read_data);
         end

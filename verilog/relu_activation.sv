@@ -3,22 +3,22 @@
 module relu_activation #(
     parameter integer DATA_WIDTH = 16
 ) (
-    input  wire                          clk,
-    input  wire                          rst,
-    input  wire                          ce,
-    input  wire                          valid_in,
-    input  wire signed [DATA_WIDTH-1:0]  in_data,
-    output reg                           valid_out,
-    output reg  signed [DATA_WIDTH-1:0]  out_data
+    input  logic                         clk,
+    input  logic                         rst,
+    input  logic                         ce,
+    input  logic                         valid_in,
+    input  logic signed [DATA_WIDTH-1:0] in_data,
+    output logic                         valid_out,
+    output logic signed [DATA_WIDTH-1:0] out_data
 );
-    always @(posedge clk) begin
+    always_ff @(posedge clk) begin
         if (rst) begin
-            out_data  <= {DATA_WIDTH{1'b0}};
+            out_data  <= '0;
             valid_out <= 1'b0;
         end else if (ce) begin
             if (valid_in) begin
                 if (in_data[DATA_WIDTH-1]) begin
-                    out_data <= {DATA_WIDTH{1'b0}};
+                    out_data <= '0;
                 end else begin
                     out_data <= in_data;
                 end
@@ -31,14 +31,14 @@ endmodule
 module tb_relu_activation;
     localparam integer DATA_WIDTH = 16;
 
-    reg clk = 1'b0;
-    reg rst = 1'b1;
-    reg ce  = 1'b1;
+    logic clk = 1'b0;
+    logic rst = 1'b1;
+    logic ce  = 1'b1;
 
-    reg  valid_in = 1'b0;
-    reg  signed [DATA_WIDTH-1:0] in_data = 0;
-    wire signed [DATA_WIDTH-1:0] out_data;
-    wire valid_out;
+    logic        valid_in = 1'b0;
+    logic signed [DATA_WIDTH-1:0] in_data = '0;
+    logic signed [DATA_WIDTH-1:0] out_data;
+    logic        valid_out;
 
     relu_activation #(
         .DATA_WIDTH(DATA_WIDTH)
@@ -80,7 +80,7 @@ module tb_relu_activation;
         $finish;
     end
 
-    always @(posedge clk) begin
+    always_ff @(posedge clk) begin
         if (valid_out) begin
             $display("[%0t] out_data = %0d", $time, out_data);
         end
