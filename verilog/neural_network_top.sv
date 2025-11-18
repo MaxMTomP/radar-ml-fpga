@@ -7,22 +7,22 @@ module neural_network_top #(
     parameter integer LAYER_COUNT       = 3,
     parameter integer LAYER_ADDR_WIDTH  = 2
 ) (
-    input  wire                          clk,
-    input  wire                          rst,
-    input  wire                          ce,
-    input  wire                          in_valid,
-    output wire                          in_ready,
-    input  wire signed [DATA_WIDTH-1:0]  in_data,
-    output wire                          out_valid,
-    output wire signed [DATA_WIDTH-1:0]  out_data,
-    input  wire                          cfg_weight_we,
-    input  wire [LAYER_ADDR_WIDTH-1:0]   cfg_weight_addr,
-    input  wire [DATA_WIDTH-1:0]         cfg_weight_data,
-    input  wire                          cfg_bias_we,
-    input  wire [LAYER_ADDR_WIDTH-1:0]   cfg_bias_addr,
-    input  wire [DATA_WIDTH-1:0]         cfg_bias_data,
-    input  wire                          cfg_commit,
-    output wire                          cfg_busy
+    input  logic                         clk,
+    input  logic                         rst,
+    input  logic                         ce,
+    input  logic                         in_valid,
+    output logic                         in_ready,
+    input  logic signed [DATA_WIDTH-1:0] in_data,
+    output logic                         out_valid,
+    output logic signed [DATA_WIDTH-1:0] out_data,
+    input  logic                         cfg_weight_we,
+    input  logic [LAYER_ADDR_WIDTH-1:0]  cfg_weight_addr,
+    input  logic signed [DATA_WIDTH-1:0] cfg_weight_data,
+    input  logic                         cfg_bias_we,
+    input  logic [LAYER_ADDR_WIDTH-1:0]  cfg_bias_addr,
+    input  logic signed [DATA_WIDTH-1:0] cfg_bias_data,
+    input  logic                         cfg_commit,
+    output logic                         cfg_busy
 );
     initial begin
         if (LAYER_COUNT <= 0) begin
@@ -30,8 +30,8 @@ module neural_network_top #(
         end
     end
 
-    wire input_stage_valid;
-    wire signed [DATA_WIDTH-1:0] input_stage_data;
+    logic                         input_stage_valid;
+    logic signed [DATA_WIDTH-1:0] input_stage_data;
 
     stream_register #(
         .DATA_WIDTH(DATA_WIDTH)
@@ -47,21 +47,21 @@ module neural_network_top #(
         .out_data(input_stage_data)
     );
 
-    reg signed [DATA_WIDTH-1:0] layer_weight_reg [0:LAYER_COUNT-1];
-    reg signed [DATA_WIDTH-1:0] layer_bias_reg   [0:LAYER_COUNT-1];
+    logic signed [DATA_WIDTH-1:0] layer_weight_reg [0:LAYER_COUNT-1];
+    logic signed [DATA_WIDTH-1:0] layer_bias_reg   [0:LAYER_COUNT-1];
 
-    reg [LAYER_ADDR_WIDTH-1:0] copy_addr;
-    reg                        copy_active;
-    reg                        copy_phase;
+    logic [LAYER_ADDR_WIDTH-1:0] copy_addr;
+    logic                        copy_active;
+    logic                        copy_phase;
 
     integer i;
-    always @(posedge clk) begin
+    always_ff @(posedge clk) begin
         if (rst) begin
             for (i = 0; i < LAYER_COUNT; i = i + 1) begin
-                layer_weight_reg[i] <= {DATA_WIDTH{1'b0}};
-                layer_bias_reg[i]   <= {DATA_WIDTH{1'b0}};
+                layer_weight_reg[i] <= '0;
+                layer_bias_reg[i]   <= '0;
             end
-            copy_addr   <= {LAYER_ADDR_WIDTH{1'b0}};
+            copy_addr   <= '0;
             copy_active <= 1'b0;
             copy_phase  <= 1'b0;
         end else if (ce) begin
@@ -69,7 +69,7 @@ module neural_network_top #(
                 if (cfg_commit) begin
                     copy_active <= 1'b1;
                     copy_phase  <= 1'b0;
-                    copy_addr   <= {LAYER_ADDR_WIDTH{1'b0}};
+                    copy_addr   <= '0;
                 end
             end else begin
                 if (!copy_phase) begin
@@ -91,8 +91,8 @@ module neural_network_top #(
 
     assign cfg_busy = copy_active;
 
-    wire [DATA_WIDTH-1:0] weight_read_data;
-    wire [DATA_WIDTH-1:0] bias_read_data;
+    logic signed [DATA_WIDTH-1:0] weight_read_data;
+    logic signed [DATA_WIDTH-1:0] bias_read_data;
 
     weight_bias_regfile #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -116,15 +116,14 @@ module neural_network_top #(
         .bias_read_data(bias_read_data)
     );
 
-    function signed [DATA_WIDTH-1:0] acc_to_data;
-        input signed [ACC_WIDTH-1:0] value;
-        begin
-            acc_to_data = value >>> FRAC_BITS;
-        end
+    function automatic signed [DATA_WIDTH-1:0] acc_to_data(
+        input signed [ACC_WIDTH-1:0] value
+    );
+        acc_to_data = value >>> FRAC_BITS;
     endfunction
 
-    wire signed [DATA_WIDTH-1:0] layer_data [0:LAYER_COUNT];
-    wire                         layer_valid [0:LAYER_COUNT];
+    logic signed [DATA_WIDTH-1:0] layer_data [0:LAYER_COUNT];
+    logic                         layer_valid [0:LAYER_COUNT];
 
     assign layer_data[0]  = input_stage_data;
     assign layer_valid[0] = input_stage_valid;
@@ -132,10 +131,13 @@ module neural_network_top #(
     genvar layer_idx;
     generate
         for (layer_idx = 0; layer_idx < LAYER_COUNT; layer_idx = layer_idx + 1) begin : g_layers
-            wire signed [ACC_WIDTH-1:0] mac_acc;
-            wire                        mac_valid;
-            wire signed [ACC_WIDTH-1:0] bias_extended = $signed(layer_bias_reg[layer_idx]) <<< FRAC_BITS;
-            wire signed [DATA_WIDTH-1:0] mac_scaled = acc_to_data(mac_acc);
+            logic signed [ACC_WIDTH-1:0] mac_acc;
+            logic                        mac_valid;
+            logic signed [ACC_WIDTH-1:0] bias_extended;
+            logic signed [DATA_WIDTH-1:0] mac_scaled;
+
+            assign bias_extended = $signed(layer_bias_reg[layer_idx]) <<< FRAC_BITS;
+            assign mac_scaled    = acc_to_data(mac_acc);
 
             mac_unit #(
                 .DATA_WIDTH(DATA_WIDTH),
@@ -178,24 +180,24 @@ module tb_neural_network_top;
     localparam integer LAYER_COUNT      = 3;
     localparam integer LAYER_ADDR_WIDTH = 2;
 
-    reg clk = 1'b0;
-    reg rst = 1'b1;
-    reg ce  = 1'b1;
+    logic clk = 1'b0;
+    logic rst = 1'b1;
+    logic ce  = 1'b1;
 
-    reg  in_valid = 1'b0;
-    wire in_ready;
-    reg  signed [DATA_WIDTH-1:0] in_data = 0;
-    wire out_valid;
-    wire signed [DATA_WIDTH-1:0] out_data;
+    logic                         in_valid = 1'b0;
+    logic                         in_ready;
+    logic signed [DATA_WIDTH-1:0] in_data = '0;
+    logic                         out_valid;
+    logic signed [DATA_WIDTH-1:0] out_data;
 
-    reg cfg_weight_we = 1'b0;
-    reg cfg_bias_we   = 1'b0;
-    reg [LAYER_ADDR_WIDTH-1:0] cfg_weight_addr = 0;
-    reg [LAYER_ADDR_WIDTH-1:0] cfg_bias_addr   = 0;
-    reg [DATA_WIDTH-1:0] cfg_weight_data = 0;
-    reg [DATA_WIDTH-1:0] cfg_bias_data   = 0;
-    reg cfg_commit = 1'b0;
-    wire cfg_busy;
+    logic cfg_weight_we = 1'b0;
+    logic cfg_bias_we   = 1'b0;
+    logic [LAYER_ADDR_WIDTH-1:0] cfg_weight_addr = '0;
+    logic [LAYER_ADDR_WIDTH-1:0] cfg_bias_addr   = '0;
+    logic signed [DATA_WIDTH-1:0] cfg_weight_data = '0;
+    logic signed [DATA_WIDTH-1:0] cfg_bias_data   = '0;
+    logic cfg_commit = 1'b0;
+    logic cfg_busy;
 
     neural_network_top #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -224,28 +226,26 @@ module tb_neural_network_top;
 
     always #5 clk = ~clk;
 
-    task write_weight;
-        input [LAYER_ADDR_WIDTH-1:0] addr;
-        input [DATA_WIDTH-1:0] data;
-        begin
-            cfg_weight_addr <= addr;
-            cfg_weight_data <= data;
-            cfg_weight_we   <= 1'b1;
-            @(posedge clk);
-            cfg_weight_we   <= 1'b0;
-        end
+    task automatic write_weight(
+        input [LAYER_ADDR_WIDTH-1:0] addr,
+        input signed [DATA_WIDTH-1:0] data
+    );
+        cfg_weight_addr <= addr;
+        cfg_weight_data <= data;
+        cfg_weight_we   <= 1'b1;
+        @(posedge clk);
+        cfg_weight_we   <= 1'b0;
     endtask
 
-    task write_bias;
-        input [LAYER_ADDR_WIDTH-1:0] addr;
-        input [DATA_WIDTH-1:0] data;
-        begin
-            cfg_bias_addr <= addr;
-            cfg_bias_data <= data;
-            cfg_bias_we   <= 1'b1;
-            @(posedge clk);
-            cfg_bias_we   <= 1'b0;
-        end
+    task automatic write_bias(
+        input [LAYER_ADDR_WIDTH-1:0] addr,
+        input signed [DATA_WIDTH-1:0] data
+    );
+        cfg_bias_addr <= addr;
+        cfg_bias_data <= data;
+        cfg_bias_we   <= 1'b1;
+        @(posedge clk);
+        cfg_bias_we   <= 1'b0;
     endtask
 
     initial begin
@@ -295,7 +295,7 @@ module tb_neural_network_top;
         $finish;
     end
 
-    always @(posedge clk) begin
+    always_ff @(posedge clk) begin
         if (out_valid) begin
             $display("[%0t] Output sample = %0d", $time, out_data);
         end
