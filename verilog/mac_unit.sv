@@ -5,40 +5,42 @@ module mac_unit #(
     parameter integer ACC_WIDTH  = 32,
     parameter integer FRAC_BITS  = 8
 ) (
-    input  wire                          clk,
-    input  wire                          rst,
-    input  wire                          ce,
-    input  wire                          valid_in,
-    input  wire signed [DATA_WIDTH-1:0]  a,
-    input  wire signed [DATA_WIDTH-1:0]  b,
-    input  wire signed [ACC_WIDTH-1:0]   acc_in,
-    output reg                           valid_out,
-    output reg  signed [ACC_WIDTH-1:0]   acc_out
+    input  logic                          clk,
+    input  logic                          rst,
+    input  logic                          ce,
+    input  logic                          valid_in,
+    input  logic signed [DATA_WIDTH-1:0]  a,
+    input  logic signed [DATA_WIDTH-1:0]  b,
+    input  logic signed [ACC_WIDTH-1:0]   acc_in,
+    output logic                          valid_out,
+    output logic signed [ACC_WIDTH-1:0]   acc_out
 );
     localparam integer PROD_WIDTH = DATA_WIDTH * 2;
 
-    reg signed [PROD_WIDTH-1:0] mult_pipe;
-    reg signed [ACC_WIDTH-1:0]  acc_pipe;
-    reg                         valid_pipe;
+    logic signed [PROD_WIDTH-1:0] mult_pipe;
+    logic signed [ACC_WIDTH-1:0]  acc_pipe;
+    logic                         valid_pipe;
 
-    function [ACC_WIDTH-1:0] sign_resize;
-        input signed [PROD_WIDTH-1:0] value;
-        begin
-            if (ACC_WIDTH >= PROD_WIDTH) begin
-                sign_resize = {{(ACC_WIDTH-PROD_WIDTH){value[PROD_WIDTH-1]}}, value};
-            end else begin
-                sign_resize = value[PROD_WIDTH-1 -: ACC_WIDTH];
-            end
+    function automatic logic signed [ACC_WIDTH-1:0] sign_resize(
+        input logic signed [PROD_WIDTH-1:0] value
+    );
+        if (ACC_WIDTH >= PROD_WIDTH) begin
+            sign_resize = {{(ACC_WIDTH-PROD_WIDTH){value[PROD_WIDTH-1]}}, value};
+        end else begin
+            sign_resize = value[PROD_WIDTH-1 -: ACC_WIDTH];
         end
     endfunction
 
-    wire signed [PROD_WIDTH-1:0] product_shifted = mult_pipe >>> FRAC_BITS;
-    wire signed [ACC_WIDTH-1:0]  mult_scaled     = $signed(sign_resize(product_shifted));
+    logic signed [PROD_WIDTH-1:0] product_shifted;
+    logic signed [ACC_WIDTH-1:0]  mult_scaled;
 
-    always @(posedge clk) begin
+    assign product_shifted = mult_pipe >>> FRAC_BITS;
+    assign mult_scaled     = $signed(sign_resize(product_shifted));
+
+    always_ff @(posedge clk) begin
         if (rst) begin
-            mult_pipe  <= {PROD_WIDTH{1'b0}};
-            acc_pipe   <= {ACC_WIDTH{1'b0}};
+            mult_pipe  <= '0;
+            acc_pipe   <= '0;
             valid_pipe <= 1'b0;
         end else if (ce) begin
             if (valid_in) begin
@@ -49,9 +51,9 @@ module mac_unit #(
         end
     end
 
-    always @(posedge clk) begin
+    always_ff @(posedge clk) begin
         if (rst) begin
-            acc_out   <= {ACC_WIDTH{1'b0}};
+            acc_out   <= '0;
             valid_out <= 1'b0;
         end else if (ce) begin
             if (valid_pipe) begin
@@ -67,16 +69,16 @@ module tb_mac_unit;
     localparam integer ACC_WIDTH  = 32;
     localparam integer FRAC_BITS  = 8;
 
-    reg clk = 1'b0;
-    reg rst = 1'b1;
-    reg ce  = 1'b1;
+    logic clk = 1'b0;
+    logic rst = 1'b1;
+    logic ce  = 1'b1;
 
-    reg  valid_in = 1'b0;
-    reg  signed [DATA_WIDTH-1:0] a = 0;
-    reg  signed [DATA_WIDTH-1:0] b = 0;
-    reg  signed [ACC_WIDTH-1:0]  acc_in = 0;
-    wire signed [ACC_WIDTH-1:0]  acc_out;
-    wire valid_out;
+    logic        valid_in = 1'b0;
+    logic signed [DATA_WIDTH-1:0] a = '0;
+    logic signed [DATA_WIDTH-1:0] b = '0;
+    logic signed [ACC_WIDTH-1:0]  acc_in = '0;
+    logic signed [ACC_WIDTH-1:0]  acc_out;
+    logic        valid_out;
 
     mac_unit #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -115,16 +117,16 @@ module tb_mac_unit;
 
         @(posedge clk);
         valid_in <= 1'b0;
-        a        <= 0;
-        b        <= 0;
-        acc_in   <= 0;
+        a        <= '0;
+        b        <= '0;
+        acc_in   <= '0;
 
         repeat (6) @(posedge clk);
         $display("MAC unit testbench end");
         $finish;
     end
 
-    always @(posedge clk) begin
+    always_ff @(posedge clk) begin
         if (valid_out) begin
             $display("[%0t] acc_out = %0d", $time, acc_out);
         end
