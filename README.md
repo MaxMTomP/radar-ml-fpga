@@ -12,6 +12,8 @@ The `verilog/` directory contains synthesizable SystemVerilog modules that imple
 | `stream_register.sv` | One-stage ready/valid stream register that can wrap existing datapaths and an illustrative testbench. |
 | `neural_network_top.sv` | Example top-level pipeline that chains MAC and ReLU layers, backed by the register file for weights/biases, with a streaming interface and demo testbench. |
 
+
 Each file includes an example testbench that can be simulated with your preferred SystemVerilog-capable simulator (e.g., `iverilog` or `xsim`).
 
 These designs are intended for Intel Cyclone V (5CSEMA5F31C6) devices; synthesis and fitting can be performed with recent Quartus Prime releases.
+
