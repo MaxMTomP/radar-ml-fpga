@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Generate synthetic radar-like 1D range profile data for ML training.
 
@@ -52,7 +51,7 @@ def generate_target_class(
     peak_amp_range: Tuple[float, float] = (0.7, 1.0),
     sigma: float = 0.7,
     noise_std: float = 0.03,
-) -> np.ndarray:
+) -> np.ndarrqay:
     """
     Generate profiles with a Gaussian-like peak in a specified bin range.
 

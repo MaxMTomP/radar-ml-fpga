@@ -1,4 +1,9 @@
-"""Train a simple MLP classifier for radar range-profile classification."""
+"""
+Train a simple MLP classifier for radar range-profile classification.
+
+MM3772 + TP2105
+"""
+
 import numpy as np
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.neural_network import MLPClassifier
